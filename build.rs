@@ -3,12 +3,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-fn assembly(
-    file_vec: &mut Vec<PathBuf>,
-    base_dir: &Path,
-    _arch: &str,
-    _is_msvc: bool,
-) {
+fn assembly(file_vec: &mut Vec<PathBuf>, base_dir: &Path, _arch: &str, _is_msvc: bool) {
     #[cfg(target_env = "msvc")]
     if _is_msvc {
         let sfx = match _arch {
@@ -16,9 +11,8 @@ fn assembly(
             "aarch64" => "armv8",
             _ => "unknown",
         };
-        let files =
-            glob::glob(&format!("{}/win64/*-{}.asm", base_dir.display(), sfx))
-                .expect("unable to collect assembly files");
+        let files = glob::glob(&format!("{}/win64/*-{}.asm", base_dir.display(), sfx))
+            .expect("unable to collect assembly files");
         for file in files {
             file_vec.push(file.unwrap());
         }
@@ -39,7 +33,6 @@ fn main() {
     let blst_base_dir = manifest_dir.join("blst");
     println!("Using blst source directory {}", blst_base_dir.display());
 
-    
     let mut cc = cc::Build::new();
     let c_src_dir = blst_base_dir.join("src");
     println!("cargo:rerun-if-changed={}", c_src_dir.display());
@@ -57,7 +50,7 @@ fn main() {
     } else {
         cc.define("__BLST_NO_ASM__", None);
     }
-    
+
     // Enable ADX instructions if available
     if target_arch.eq("x86_64") {
         if target_env.eq("sgx") {
@@ -69,18 +62,13 @@ fn main() {
         {
             // If target-cpu is specified on the rustc command line,
             // then obey the resulting target-features.
-            let feat_list = env::var("CARGO_CFG_TARGET_FEATURE")
-                .unwrap_or_default();
+            let feat_list = env::var("CARGO_CFG_TARGET_FEATURE").unwrap_or_default();
             let features: Vec<_> = feat_list.split(',').collect();
             if !features.contains(&"ssse3") {
-                println!(
-                    "Compiling in portable mode without ISA extensions"
-                );
+                println!("Compiling in portable mode without ISA extensions");
                 cc.define("__BLST_PORTABLE__", None);
             } else if features.contains(&"adx") {
-                println!(
-                    "Enabling ADX because it was set as target-feature"
-                );
+                println!("Enabling ADX because it was set as target-feature");
                 cc.define("__ADX__", None);
             }
         }
@@ -116,7 +104,7 @@ fn main() {
         .header("blst/blst.h")
         .generate()
         .expect("Unable to generate bindings");
-    
+
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
