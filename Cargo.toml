@@ -6,7 +6,6 @@ links = "blst"
 rust-version = "1.92"
 
 [dependencies]
-ff = { version = "0.14.0-pre.0", package = "rustcrypto-ff" }
 group = { version = "0.14.0-pre.0", package = "rustcrypto-group" }
 
 [build-dependencies]
