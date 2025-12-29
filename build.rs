@@ -102,6 +102,12 @@ fn main() {
         .derive_eq(true)
         .rustified_enum("BLST_ERROR")
         .clang_arg("-D__BLST_RUST_BINDGEN__")
+        // Remove PartialEq - single regex for all types
+        .no_partialeq("blst_(p[12]|fp12|pairing|uniq)")
+        // Remove Copy
+        .no_copy("blst_(pairing|uniq|scalar)")
+        // Remove Default
+        .no_default("blst_fp12")
         .header("blst/blst.h")
         .generate()
         .expect("Unable to generate bindings");
