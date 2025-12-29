@@ -44,7 +44,9 @@ dependencies = [
  "bindgen",
  "cc",
  "glob",
+ "rand_core",
  "rustcrypto-group",
+ "subtle",
 ]
 
 [[package]]
