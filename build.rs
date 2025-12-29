@@ -95,6 +95,7 @@ fn main() {
     // Generate bindings.
     let bindings = bindgen::Builder::default()
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .use_core()
         .opaque_type("blst_pairing")
         .opaque_type("blst_uniq")
         .derive_default(true)

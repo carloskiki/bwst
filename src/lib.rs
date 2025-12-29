@@ -1,3 +1,5 @@
+#![no_std]
+
 pub mod g1;
 pub mod g2;
 
