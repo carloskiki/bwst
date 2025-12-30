@@ -567,9 +567,9 @@ mod tests {
 
     #[test]
     fn doubling() {
-            let tmp = Projective::identity().double();
-            assert!(bool::from(tmp.is_identity()));
-            assert!(is_on_curve(&tmp));
+        let tmp = Projective::identity().double();
+        assert!(bool::from(tmp.is_identity()));
+        assert!(is_on_curve(&tmp));
     }
 
     #[test]
@@ -668,4 +668,3 @@ mod tests {
         assert_eq!(naive, pippenger);
     }
 }
-

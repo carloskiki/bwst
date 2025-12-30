@@ -1,6 +1,9 @@
 use core::ops::{Mul, MulAssign};
 
-use crate::{bindings::{self, blst_fp12}, g1, g2};
+use crate::{
+    bindings::{self, blst_fp12},
+    g1, g2,
+};
 
 pub struct Result(blst_fp12);
 
@@ -49,20 +52,16 @@ impl Result {
             unsafe { bindings::blst_p2_to_affine(&mut out, &q.0) }
             out
         };
-        
+
         // Safety: binding call with valid arguments.
         let mut out = unsafe { *bindings::blst_fp12_one() };
         // Safety: binding call with valid arguments.
-        unsafe {
-            bindings::blst_miller_loop(&mut out, &q_affine, &p_affine)
-        }
+        unsafe { bindings::blst_miller_loop(&mut out, &q_affine, &p_affine) }
         Result(out)
     }
 
     pub fn final_verify(&self, other: &Result) -> bool {
         // Safety: binding call with valid arguments.
-        unsafe {
-            bindings::blst_fp12_finalverify(&self.0, &other.0)
-        }
+        unsafe { bindings::blst_fp12_finalverify(&self.0, &other.0) }
     }
 }
