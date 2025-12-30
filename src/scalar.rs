@@ -185,20 +185,25 @@ impl Field for Scalar {
 
     fn try_from_rng<R: rand_core::TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         loop {
-            let mut scalar = bindings::blst_scalar { b: [0u8; 32] };
-            rng.try_fill_bytes(&mut scalar.b)?;
+            let mut scalar = bindings::blst_fr { l: [0, 0, 0, 0] };
+            // Safety:
+            // - Both types have the same size, and are `repr(C)`.
+            // - `blst_fr` has stricter alignment (`u64`) than `blst_scalar` (`u8`).
+            // - `scalar` is not used until the call to `blst_fr_from_scalar`.
+            let scalar_as_bytes = unsafe {
+                &mut *(&mut scalar as *mut bindings::blst_fr as *mut bindings::blst_scalar)
+            };
+            rng.try_fill_bytes(&mut scalar_as_bytes.b)?;
 
             // Mask away the unused most-significant bits.
-            scalar.b[31] &= 0xff >> (256 - Scalar::NUM_BITS as usize);
+            scalar_as_bytes.b[31] &= 0xff >> (256 - Scalar::NUM_BITS as usize);
 
-            if unsafe { bindings::blst_scalar_fr_check(&scalar) } {
-                let out_ptr: *mut blst_fr =
-                    &mut scalar as *mut bindings::blst_scalar as *mut blst_fr;
-                // Safety: both types have the same size, and are `repr(C)`. The out pointer can be
-                // the same as the input pointer.
-                unsafe { bindings::blst_fr_from_scalar(out_ptr, &scalar) };
+            if unsafe { bindings::blst_scalar_fr_check(scalar_as_bytes) } {
+                // Safety: The function allows for `out` and `scalar` to be the same pointer.
+                unsafe { bindings::blst_fr_from_scalar(&mut scalar, scalar_as_bytes) };
+                let _ = scalar_as_bytes;
                 // Safety: aligned, valid, and unique pointer.
-                return Ok(Scalar(unsafe { *out_ptr }));
+                return Ok(Scalar(scalar));
             }
         }
     }
