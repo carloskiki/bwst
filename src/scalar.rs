@@ -10,7 +10,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use crate::bindings::{self, blst_fr};
 
 /// Constant representing the modulus in little-endian u64 limbs.
-/// 
+///
 /// q = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
 pub const MODULUS: [u64; 4] = [
     0xffff_ffff_0000_0001,
