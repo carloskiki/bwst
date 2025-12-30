@@ -54,20 +54,22 @@ jobs:
         env:
           LSAN_OPTIONS: "suppressions=lsan-suppressions.txt"
           RUSTFLAGS: "-Z sanitizer=leak"
-  miri:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # tag=v6.0.0
-        with:
-          submodules: true
-      - run: |
-          echo "NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)" >> "$GITHUB_ENV"
-      - name: Install ${{ env.NIGHTLY }}
-        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
-        with:
-          toolchain: ${{ env.NIGHTLY }}
-          components: miri
-      - name: cargo miri test
-        run: cargo miri test
-        env:
-          MIRIFLAGS: ""
+# FIXME: Miri currently does not support most of the operations in `blst`, so we have to disable
+# this workflow for now.
+#   miri:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # tag=v6.0.0
+#         with:
+#           submodules: true
+#       - run: |
+#           echo "NIGHTLY=nightly-$(curl -s https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu/miri)" >> "$GITHUB_ENV"
+#       - name: Install ${{ env.NIGHTLY }}
+#         uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # branch=master
+#         with:
+#           toolchain: ${{ env.NIGHTLY }}
+#           components: miri
+#       - name: cargo miri test
+#         run: cargo miri test
+#         env:
+#           MIRIFLAGS: ""
