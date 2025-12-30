@@ -14,9 +14,9 @@ use crate::{
 
 #[derive(Debug, Default, Clone, Copy)]
 #[repr(transparent)]
-pub struct G2Projective(blst_p2);
+pub struct Projective(pub(crate) blst_p2);
 
-impl Add for G2Projective {
+impl Add for Projective {
     type Output = Self;
 
     #[allow(clippy::op_ref)]
@@ -25,29 +25,29 @@ impl Add for G2Projective {
     }
 }
 
-impl Add<&G2Projective> for G2Projective {
+impl Add<&Projective> for Projective {
     type Output = Self;
 
-    fn add(mut self, other: &G2Projective) -> Self::Output {
+    fn add(mut self, other: &Projective) -> Self::Output {
         self += other;
         self
     }
 }
 
-impl AddAssign for G2Projective {
+impl AddAssign for Projective {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl AddAssign<&G2Projective> for G2Projective {
-    fn add_assign(&mut self, other: &G2Projective) {
+impl AddAssign<&Projective> for Projective {
+    fn add_assign(&mut self, other: &Projective) {
         // Safety: It is safe to call with `out` being one of the parameters.
         unsafe { bindings::blst_p2_add_or_double(&mut self.0, &self.0, &other.0) };
     }
 }
 
-impl Neg for G2Projective {
+impl Neg for Projective {
     type Output = Self;
 
     fn neg(mut self) -> Self::Output {
@@ -57,15 +57,15 @@ impl Neg for G2Projective {
     }
 }
 
-impl Neg for &G2Projective {
-    type Output = G2Projective;
+impl Neg for &Projective {
+    type Output = Projective;
 
     fn neg(self) -> Self::Output {
         -*self
     }
 }
 
-impl Sub for G2Projective {
+impl Sub for Projective {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -73,39 +73,39 @@ impl Sub for G2Projective {
     }
 }
 
-impl Sub<&G2Projective> for G2Projective {
+impl Sub<&Projective> for Projective {
     type Output = Self;
 
-    fn sub(self, other: &G2Projective) -> Self::Output {
+    fn sub(self, other: &Projective) -> Self::Output {
         self + (-other)
     }
 }
 
-impl SubAssign for G2Projective {
+impl SubAssign for Projective {
     fn sub_assign(&mut self, other: Self) {
         *self += -other;
     }
 }
 
-impl SubAssign<&G2Projective> for G2Projective {
-    fn sub_assign(&mut self, other: &G2Projective) {
+impl SubAssign<&Projective> for Projective {
+    fn sub_assign(&mut self, other: &Projective) {
         *self += -other;
     }
 }
 
-impl Sum for G2Projective {
+impl Sum for Projective {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.fold(Self::identity(), |acc, item| acc + item)
     }
 }
 
-impl<'a> Sum<&'a G2Projective> for G2Projective {
-    fn sum<I: Iterator<Item = &'a G2Projective>>(iter: I) -> Self {
+impl<'a> Sum<&'a Projective> for Projective {
+    fn sum<I: Iterator<Item = &'a Projective>>(iter: I) -> Self {
         iter.fold(Self::identity(), |acc, item| acc + item)
     }
 }
 
-impl Mul<Scalar> for G2Projective {
+impl Mul<Scalar> for Projective {
     type Output = Self;
 
     fn mul(self, rhs: Scalar) -> Self::Output {
@@ -113,7 +113,7 @@ impl Mul<Scalar> for G2Projective {
     }
 }
 
-impl Mul<&Scalar> for G2Projective {
+impl Mul<&Scalar> for Projective {
     type Output = Self;
 
     fn mul(mut self, rhs: &Scalar) -> Self::Output {
@@ -122,13 +122,13 @@ impl Mul<&Scalar> for G2Projective {
     }
 }
 
-impl MulAssign<Scalar> for G2Projective {
+impl MulAssign<Scalar> for Projective {
     fn mul_assign(&mut self, rhs: Scalar) {
         *self *= &rhs;
     }
 }
 
-impl MulAssign<&Scalar> for G2Projective {
+impl MulAssign<&Scalar> for Projective {
     fn mul_assign(&mut self, rhs: &Scalar) {
         // Safety: It is safe to call with `out` being one of the parameters.
         unsafe {
@@ -142,20 +142,20 @@ impl MulAssign<&Scalar> for G2Projective {
     }
 }
 
-impl PartialEq for G2Projective {
+impl PartialEq for Projective {
     fn eq(&self, other: &Self) -> bool {
         // Safety: bindings call with valid arguments.
         unsafe { bindings::blst_p2_is_equal(&self.0, &other.0) }
     }
 }
-impl Eq for G2Projective {}
-impl ConstantTimeEq for G2Projective {
+impl Eq for Projective {}
+impl ConstantTimeEq for Projective {
     fn ct_eq(&self, other: &Self) -> Choice {
         ((self == other) as u8).into()
     }
 }
 
-impl ConditionallySelectable for G2Projective {
+impl ConditionallySelectable for Projective {
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
         let select_fp2 =
             |a: &bindings::blst_fp2, b: &bindings::blst_fp2, choice: Choice| -> bindings::blst_fp2 {
@@ -176,7 +176,7 @@ impl ConditionallySelectable for G2Projective {
                 }
             };
 
-        G2Projective(blst_p2 {
+        Projective(blst_p2 {
             x: select_fp2(&a.0.x, &b.0.x, choice),
             y: select_fp2(&a.0.y, &b.0.y, choice),
             z: select_fp2(&a.0.z, &b.0.z, choice),
@@ -184,7 +184,7 @@ impl ConditionallySelectable for G2Projective {
     }
 }
 
-impl Group for G2Projective {
+impl Group for Projective {
     type Scalar = Scalar;
 
     fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
@@ -207,7 +207,7 @@ impl Group for G2Projective {
             )
         };
 
-        Ok(G2Projective(out))
+        Ok(Projective(out))
     }
 
     fn identity() -> Self {
@@ -216,7 +216,7 @@ impl Group for G2Projective {
 
     fn generator() -> Self {
         // Safety: bindings call returning a constant generator point.
-        G2Projective(unsafe { *bindings::blst_p2_generator() })
+        Projective(unsafe { *bindings::blst_p2_generator() })
     }
 
     fn is_identity(&self) -> Choice {
@@ -228,7 +228,7 @@ impl Group for G2Projective {
         let mut out = Self::default().0;
         // Safety: bindings call with valid arguments.
         unsafe { bindings::blst_p2_double(&mut out, &self.0) };
-        G2Projective(out)
+        Projective(out)
     }
 }
 
@@ -253,7 +253,7 @@ impl AsMut<[u8]> for Compressed {
     }
 }
 
-impl GroupEncoding for G2Projective {
+impl GroupEncoding for Projective {
     type Repr = Compressed;
 
     fn from_bytes(bytes: &Self::Repr) -> subtle::CtOption<Self> {
@@ -273,7 +273,7 @@ impl GroupEncoding for G2Projective {
             bindings::blst_p2_uncompress(&mut affine, bytes.0.as_ptr())
                 == bindings::BLST_ERROR::BLST_SUCCESS
         };
-        let mut out = G2Projective::default();
+        let mut out = Projective::default();
         // Safety: bindings call with valid arguments.
         unsafe {
             bindings::blst_p2_from_affine(&mut out.0, &affine);
@@ -292,12 +292,12 @@ impl GroupEncoding for G2Projective {
     }
 }
 
-impl G2Projective {
+impl Projective {
     #[cfg(feature = "alloc")]
     pub fn linear_combination(points: &[Self], scalars: &[Scalar]) -> Self {
         use alloc::{vec, vec::Vec};
 
-        let mut out = G2Projective::default().0;
+        let mut out = Projective::default().0;
         let len = points.len().min(scalars.len());
         let points = [points.as_ptr() as *const blst_p2, core::ptr::null()];
         let mut affines = Vec::with_capacity(len);
@@ -333,7 +333,7 @@ impl G2Projective {
             );
         };
 
-        G2Projective(out)
+        Projective(out)
     }
 
     
