@@ -331,7 +331,6 @@ impl Projective {
         Projective(out)
     }
 
-    
     /// Hash to curve algorithm.
     // TODO: `hash2curve` traits when the crate does not depend on `elliptic-curve` anymore.
     pub fn hash_to_curve(msg: &[u8], dst: &[u8], aug: &[u8]) -> Self {
@@ -348,5 +347,257 @@ impl Projective {
             );
         }
         res
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use getrandom::SysRng;
+    use group::{Group, GroupEncoding};
+
+    use super::Projective;
+    use crate::{
+        bindings::{blst_fp, blst_fr},
+        scalar::Scalar,
+    };
+
+    fn is_on_curve(point: &Projective) -> bool {
+        // Safety: bindings call with valid arguments.
+        unsafe { crate::bindings::blst_p1_on_curve(&point.0) }
+    }
+
+    #[test]
+    fn identity() {
+        {
+            let z = Projective::identity();
+            assert!(bool::from(z.is_identity()));
+        }
+
+        // Negation edge case with zero.
+        {
+            let mut z = Projective::identity();
+            z = -z;
+            assert!(bool::from(z.is_identity()));
+        }
+
+        // Doubling edge case with zero.
+        {
+            let mut z = Projective::identity();
+            z = z.double();
+            assert!(bool::from(z.is_identity()));
+        }
+
+        // Addition edge cases with zero
+        {
+            let mut r = Projective::try_from_rng(&mut SysRng).unwrap();
+            let rcopy = r;
+            r += &Projective::identity();
+            assert_eq!(r, rcopy);
+
+            let mut z = Projective::identity();
+            z += Projective::identity();
+            assert!(bool::from(z.is_identity()));
+
+            let mut z2 = z;
+            z2 += &r;
+
+            assert_eq!(z2, r);
+        }
+    }
+
+    #[test]
+    fn on_curve() {
+        assert!(is_on_curve(&Projective::identity()));
+
+        let mut generator = Projective::generator();
+        assert!(is_on_curve(&generator));
+
+        let new_x = blst_fp {
+            l: [
+                0xba7afa1f9a6fe250,
+                0xfa0f5b595eafe731,
+                0x3bdc477694c306e7,
+                0x2149be4b3949fa24,
+                0x64aa6e0649b2078c,
+                0x12b108ac33643c3e,
+            ],
+        };
+
+        generator.0.x = new_x;
+        assert!(!is_on_curve(&generator));
+    }
+
+    #[test]
+    fn equality() {
+        let a = Projective::generator();
+        let b = Projective::identity();
+
+        assert_eq!(a, a);
+        assert_eq!(b, b);
+        assert_ne!(a, b);
+        assert_ne!(b, a);
+
+        let z = blst_fp {
+            l: [
+                0xba7afa1f9a6fe250,
+                0xfa0f5b595eafe731,
+                0x3bdc477694c306e7,
+                0x2149be4b3949fa24,
+                0x64aa6e0649b2078c,
+                0x12b108ac33643c3e,
+            ],
+        };
+
+        let z2 = {
+            let mut out = blst_fp::default();
+            // Safety: bindings call with valid arguments.
+            unsafe { crate::bindings::blst_fp_sqr(&mut out, &z) };
+            out
+        };
+        let z3 = {
+            let mut out = blst_fp::default();
+            // Safety: bindings call with valid arguments.
+            unsafe { crate::bindings::blst_fp_mul(&mut out, &z2, &z) };
+            out
+        };
+        let mut c = {
+            let mut x = blst_fp::default();
+            let mut y = blst_fp::default();
+            // Safety: bindings call with valid arguments.
+            unsafe {
+                crate::bindings::blst_fp_mul(&mut x, &a.0.x, &z2);
+                crate::bindings::blst_fp_mul(&mut y, &a.0.y, &z3);
+            }
+
+            Projective(crate::bindings::blst_p1 { x, y, z })
+        };
+        assert!(is_on_curve(&c));
+
+        assert_eq!(a, c);
+        assert_eq!(c, a);
+        assert_ne!(b, c);
+        assert_ne!(c, b);
+
+        c.0.y = (-c).0.y;
+        assert!(is_on_curve(&c));
+
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+        assert_ne!(c, a);
+        assert_ne!(c, b);
+
+        c.0.y = (-c).0.y; // restore y
+        c.0.x = z;
+        assert!(!is_on_curve(&c));
+        assert_ne!(a, b);
+        assert_ne!(a, c);
+        assert_ne!(b, c);
+    }
+
+    #[test]
+    fn doubling() {
+        {
+            let a = Projective::generator().double().double(); // 4P
+            let b = Projective::generator().double(); // 2P
+            let c = a + b; // 4P + 2P = 6P
+            let d = Projective::generator() * Scalar::from(6u64); // 6P
+            assert_eq!(c, d);
+        }
+    }
+
+    #[test]
+    fn addition() {
+        {
+            let a = Projective::identity();
+            let b = Projective::identity();
+            let c = a + b;
+            assert!(bool::from(c.is_identity()));
+        }
+        {
+            let a = Projective::identity();
+            let b = Projective::generator();
+            let c1 = a + b;
+            let c2 = b + a;
+            assert_eq!(c2, Projective::generator());
+            assert_eq!(c1, c2);
+        }
+        {
+            let a = Projective::generator().double().double(); // 4P
+            let b = Projective::generator().double(); // 2P
+            let c = a + b;
+
+            let mut d = Projective::generator();
+            for _ in 0..5 {
+                d += Projective::generator();
+            }
+            assert_eq!(c, d);
+        }
+    }
+
+    #[test]
+    fn subtraction() {
+        let a = Projective::generator().double();
+        assert_eq!(a + (-a), Projective::identity());
+        assert_eq!(a + (-a), a - a);
+    }
+
+    #[test]
+    fn multiplication() {
+        let g = Projective::generator();
+        let a = Scalar(blst_fr {
+            l: [
+                0x2b568297a56da71c,
+                0xd8c39ecb0ef375d1,
+                0x435c38da67bfbf96,
+                0x8088a05026b659b2,
+            ],
+        });
+        let b = Scalar(blst_fr {
+            l: [
+                0x785fdd9b26ef8b85,
+                0xc997f25837695c18,
+                0x4c8dbc39e7b756c1,
+                0x70d9b6cc6d87df20,
+            ],
+        });
+        let c = a * b;
+
+        assert_eq!((g * a) * b, g * c);
+    }
+
+    #[test]
+    fn serialization() {
+        for _ in 0..100 {
+            let el = Projective::try_from_rng(&mut SysRng).unwrap();
+            let c = el.to_bytes();
+            assert_eq!(Projective::from_bytes(&c).unwrap(), el);
+            assert_eq!(Projective::from_bytes_unchecked(&c).unwrap(), el);
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "alloc")]
+    fn linear_combination() {
+        use alloc::vec::Vec;
+        use group::ff::Field;
+
+        const SIZE: usize = 10;
+        let points: Vec<Projective> = (0..SIZE)
+            .map(|_| Projective::try_from_rng(&mut SysRng))
+            .collect::<Result<_, _>>()
+            .unwrap();
+        let scalars: Vec<Scalar> = (0..SIZE)
+            .map(|_| Scalar::try_from_rng(&mut SysRng))
+            .collect::<Result<_, _>>()
+            .unwrap();
+
+        let mut naive = points[0] * scalars[0];
+        for i in 1..SIZE {
+            naive += points[i] * scalars[i];
+        }
+
+        let pippenger = Projective::linear_combination(points.as_slice(), scalars.as_slice());
+
+        assert_eq!(naive, pippenger);
     }
 }

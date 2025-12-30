@@ -9,7 +9,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 use crate::bindings::{self, blst_fr};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub struct Scalar(blst_fr);
+pub struct Scalar(pub(crate) blst_fr);
 
 impl Add for Scalar {
     type Output = Self;
