@@ -10,7 +10,7 @@ alloc = []
 
 [dependencies]
 group = { version = "0.14.0-pre.0", package = "rustcrypto-group" }
-subtle = "2.6"
+subtle = { version = "2.6", default-features = false }
 rand_core = "0.10.0-rc-3"
 
 [dev-dependencies]
