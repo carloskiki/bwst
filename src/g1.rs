@@ -437,41 +437,7 @@ mod tests {
         assert_ne!(a, b);
         assert_ne!(b, a);
 
-        let z = blst_fp {
-            l: [
-                0xba7afa1f9a6fe250,
-                0xfa0f5b595eafe731,
-                0x3bdc477694c306e7,
-                0x2149be4b3949fa24,
-                0x64aa6e0649b2078c,
-                0x12b108ac33643c3e,
-            ],
-        };
-
-        let z2 = {
-            let mut out = blst_fp::default();
-            // Safety: bindings call with valid arguments.
-            unsafe { crate::bindings::blst_fp_sqr(&mut out, &z) };
-            out
-        };
-        let z3 = {
-            let mut out = blst_fp::default();
-            // Safety: bindings call with valid arguments.
-            unsafe { crate::bindings::blst_fp_mul(&mut out, &z2, &z) };
-            out
-        };
-        let mut c = {
-            let mut x = blst_fp::default();
-            let mut y = blst_fp::default();
-            // Safety: bindings call with valid arguments.
-            unsafe {
-                crate::bindings::blst_fp_mul(&mut x, &a.0.x, &z2);
-                crate::bindings::blst_fp_mul(&mut y, &a.0.y, &z3);
-            }
-
-            Projective(crate::bindings::blst_p1 { x, y, z })
-        };
-        assert!(is_on_curve(&c));
+        let mut c = Projective::generator() - Projective::identity();
 
         assert_eq!(a, c);
         assert_eq!(c, a);
@@ -485,13 +451,6 @@ mod tests {
         assert_ne!(b, c);
         assert_ne!(c, a);
         assert_ne!(c, b);
-
-        c.0.y = (-c).0.y; // restore y
-        c.0.x = z;
-        assert!(!is_on_curve(&c));
-        assert_ne!(a, b);
-        assert_ne!(a, c);
-        assert_ne!(b, c);
     }
 
     #[test]

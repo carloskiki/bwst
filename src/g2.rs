@@ -368,9 +368,9 @@ mod tests {
     use getrandom::SysRng;
     use group::{Group, GroupEncoding};
 
-    use super::{Compressed, Projective};
+    use super::Projective;
     use crate::{
-        bindings::{blst_fp, blst_fp2, blst_fr, blst_p2},
+        bindings::{blst_fp, blst_fp2, blst_fr},
         scalar::Scalar,
     };
 
@@ -477,11 +477,13 @@ mod tests {
                     ],
                 },
             };
-            let mut compressed = Compressed::default();
-            // Safety: bindings call with valid arguments.
-            unsafe {
-                crate::bindings::blst_p2_affine_compress(compressed.0.as_mut_ptr(), &p_affine)
-            };
+            let p2 = {
+                let mut out = Projective::default();
+                // Safety: bindings call with valid arguments.
+                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };  
+                out
+            }; 
+            let compressed = p2.to_bytes();
 
             assert!(bool::from(Projective::from_bytes(&compressed).is_none()));
             assert!(bool::from(
@@ -541,11 +543,13 @@ mod tests {
                     ],
                 },
             };
-            let mut compressed = Compressed::default();
-            // Safety: bindings call with valid arguments.
-            unsafe {
-                crate::bindings::blst_p2_affine_compress(compressed.0.as_mut_ptr(), &p_affine)
+            let p2 = {
+                let mut out = Projective::default();
+                // Safety: bindings call with valid arguments.
+                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };  
+                out
             };
+            let compressed = p2.to_bytes();
 
             assert!(bool::from(Projective::from_bytes(&compressed).is_none()));
             assert!(bool::from(

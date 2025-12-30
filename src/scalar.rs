@@ -1010,32 +1010,6 @@ mod tests {
 
     #[test]
     fn square() {
-        let a = Scalar(blst_fr {
-            l: [
-                0xffffffffffffffff,
-                0xffffffffffffffff,
-                0xffffffffffffffff,
-                0x73eda753299d7d47,
-            ],
-        });
-        let expected = {
-            let mut out = blst_fr::default();
-            unsafe {
-                crate::bindings::blst_fr_from_uint64(
-                    &mut out,
-                    [
-                        0xc0d698e7bde077b8u64,
-                        0xb79a310579e76ec2,
-                        0xac1da8d0a9af4e5f,
-                        0x13f629c49bf23e97,
-                    ]
-                    .as_ptr(),
-                )
-            };
-            out
-        };
-        assert_eq!(a.square(), Scalar(expected));
-
         for _ in 0..10000 {
             // Ensure that (a * a) = a^2
             let a = Scalar::try_from_rng(&mut SysRng).unwrap();

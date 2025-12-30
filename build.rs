@@ -3,6 +3,65 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
+// Functions used by the library
+const ALLOWLIST_FUNCTIONS: &[&str] = &[
+    // G1 curve functions
+    "blst_p1_add_or_double",
+    "blst_p1_cneg",
+    "blst_p1_mult",
+    "blst_p1_is_equal",
+    "blst_p1_generator",
+    "blst_p1_is_inf",
+    "blst_p1_double",
+    "blst_p1_in_g1",
+    "blst_p1_uncompress",
+    "blst_p1_from_affine",
+    "blst_p1_compress",
+    "blst_p1_to_affine",
+    "blst_p1s_to_affine",
+    "blst_p1s_mult_pippenger_scratch_sizeof",
+    "blst_p1s_mult_pippenger",
+    "blst_p1_on_curve",
+    // G2 curve functions
+    "blst_p2_add_or_double",
+    "blst_p2_cneg",
+    "blst_p2_mult",
+    "blst_p2_is_equal",
+    "blst_p2_generator",
+    "blst_p2_is_inf",
+    "blst_p2_double",
+    "blst_p2_in_g2",
+    "blst_p2_uncompress",
+    "blst_p2_from_affine",
+    "blst_p2_compress",
+    "blst_p2_to_affine",
+    "blst_p2s_to_affine",
+    "blst_p2s_mult_pippenger_scratch_sizeof",
+    "blst_p2s_mult_pippenger",
+    "blst_p2_on_curve",
+    // Scalar functions
+    "blst_fr_add",
+    "blst_fr_cneg",
+    "blst_fr_mul",
+    "blst_fr_sqr",
+    "blst_fr_eucl_inverse",
+    // Hash-to-curve functions
+    "blst_hash_to_g1",
+    "blst_hash_to_g2",
+    // Encoding functions
+    "blst_encode_to_g1",
+    "blst_encode_to_g2",
+    // Scalar conversion functions
+    "blst_scalar_fr_check",
+    "blst_fr_from_scalar",
+    "blst_scalar_from_fr",
+    // FP12 and pairing functions
+    "blst_fp12_mul",
+    "blst_fp12_one",
+    "blst_miller_loop",
+    "blst_fp12_finalverify",
+];
+
 fn assembly(file_vec: &mut Vec<PathBuf>, base_dir: &Path, _arch: &str, _is_msvc: bool) {
     #[cfg(target_env = "msvc")]
     if _is_msvc {
@@ -93,7 +152,7 @@ fn main() {
     cc.files(&file_vec).compile("blst");
 
     // Generate bindings.
-    let bindings = bindgen::Builder::default()
+    let mut bindings = bindgen::Builder::default()
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .use_core()
         .opaque_type("blst_pairing")
@@ -108,9 +167,26 @@ fn main() {
         .no_copy("blst_(pairing|uniq|scalar)")
         // Remove Default
         .no_default("blst_fp12")
-        .header("blst/blst.h")
-        .generate()
-        .expect("Unable to generate bindings");
+        // Whitelist types used in the library
+        .allowlist_type("blst_p1")
+        .allowlist_type("blst_p2")
+        .allowlist_type("blst_fr")
+        .allowlist_type("blst_scalar")
+        .allowlist_type("blst_fp")
+        .allowlist_type("blst_fp2")
+        .allowlist_type("blst_fp12")
+        .allowlist_type("blst_p1_affine")
+        .allowlist_type("blst_p2_affine")
+        .allowlist_type("limb_t")
+        .allowlist_type("BLST_ERROR")
+        .header("blst/blst.h");
+
+    // Allowlist all functions used in the library
+    for func in ALLOWLIST_FUNCTIONS {
+        bindings = bindings.allowlist_function(func);
+    }
+
+    let bindings = bindings.generate().expect("Unable to generate bindings");
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings

@@ -8,7 +8,8 @@ pub mod g2;
 pub mod miller_loop;
 pub mod scalar;
 
-pub mod bindings {
+pub(crate) mod bindings {
     #![allow(non_camel_case_types)]
+    #![allow(dead_code)]
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
