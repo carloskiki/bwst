@@ -60,6 +60,7 @@ const ALLOWLIST_FUNCTIONS: &[&str] = &[
     "blst_fp12_one",
     "blst_miller_loop",
     "blst_fp12_finalverify",
+    "blst_fp12_is_equal",
 ];
 
 fn assembly(file_vec: &mut Vec<PathBuf>, base_dir: &Path, _arch: &str, _is_msvc: bool) {

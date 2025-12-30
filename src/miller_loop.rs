@@ -8,6 +8,14 @@ use crate::{
 #[derive(Clone, Copy, Debug)]
 pub struct Result(blst_fp12);
 
+impl Eq for Result {}
+
+impl PartialEq for Result {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { bindings::blst_fp12_is_equal(&self.0, &other.0) }
+    }
+}
+
 impl Mul for Result {
     type Output = Self;
 
