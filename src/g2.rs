@@ -480,9 +480,9 @@ mod tests {
             let p2 = {
                 let mut out = Projective::default();
                 // Safety: bindings call with valid arguments.
-                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };  
+                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };
                 out
-            }; 
+            };
             let compressed = p2.to_bytes();
 
             assert!(bool::from(Projective::from_bytes(&compressed).is_none()));
@@ -546,7 +546,7 @@ mod tests {
             let p2 = {
                 let mut out = Projective::default();
                 // Safety: bindings call with valid arguments.
-                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };  
+                unsafe { crate::bindings::blst_p2_from_affine(&mut out.0, &p_affine) };
                 out
             };
             let compressed = p2.to_bytes();
