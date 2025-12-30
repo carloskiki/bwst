@@ -9,6 +9,16 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use crate::bindings::{self, blst_fr};
 
+/// Constant representing the modulus in little-endian u64 limbs.
+/// 
+/// q = 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001
+pub const MODULUS: [u64; 4] = [
+    0xffff_ffff_0000_0001,
+    0x53bd_a402_fffe_5bfe,
+    0x3339_d808_09a1_d805,
+    0x73ed_a753_299d_7d48,
+];
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Scalar(pub(crate) blst_fr);
 
@@ -385,14 +395,6 @@ mod tests {
             0x73eda753299d7d48,
         ],
     });
-
-    // Little-endian non-Montgomery form not reduced mod p.
-    const MODULUS: [u64; 4] = [
-        0xffff_ffff_0000_0001,
-        0x53bd_a402_fffe_5bfe,
-        0x3339_d808_09a1_d805,
-        0x73ed_a753_299d_7d48,
-    ];
 
     // Little-endian non-Montgomery form not reduced mod p.
     const MODULUS_REPR: [u8; 32] = [
