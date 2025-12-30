@@ -5,6 +5,7 @@ use crate::{
     g1, g2,
 };
 
+#[derive(Clone, Copy, Debug)]
 pub struct Result(blst_fp12);
 
 impl Mul for Result {
