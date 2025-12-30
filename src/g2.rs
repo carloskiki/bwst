@@ -303,16 +303,20 @@ impl GroupEncoding for Projective {
 impl Projective {
     #[cfg(feature = "alloc")]
     pub fn linear_combination(points: &[Self], scalars: &[Scalar]) -> Self {
-        use alloc::{vec, vec::Vec};
+        use alloc::vec::Vec;
 
-        let mut out = Projective::default().0;
         let len = points.len().min(scalars.len());
+        if len == 0 {
+            return Projective::identity();
+        }
+        
+        let mut out = Projective::default().0;
         let points = [points.as_ptr() as *const blst_p2, core::ptr::null()];
         let mut affines = Vec::with_capacity(len);
         // Safety: bindings call with valid arguments.
         // We do not need to set the length of `affines` because it is only used as a raw pointer,
         // and the points don't have a `Drop` implementation.
-        unsafe { bindings::blst_p2s_to_affine(affines.as_mut_ptr(), &points[0], len) };
+        unsafe { bindings::blst_p2s_to_affine(affines.as_mut_ptr(), points.as_ptr(), len) };
         let affines = [affines.as_ptr(), core::ptr::null()];
 
         let scalars = scalars
@@ -323,11 +327,9 @@ impl Projective {
         let scalars = [scalars.as_ptr(), core::ptr::null()];
 
         // Safety: bindings call with valid arguments.
-        let scratch_size = unsafe { bindings::blst_p2s_mult_pippenger_scratch_sizeof(len) };
-        let mut scratch = vec![
-            bindings::limb_t::default();
-            scratch_size / core::mem::size_of::<bindings::limb_t>()
-        ];
+        let scratch_size = unsafe { bindings::blst_p1s_mult_pippenger_scratch_sizeof(len) };
+        let mut scratch: Vec<bindings::limb_t> =
+            Vec::with_capacity(scratch_size / core::mem::size_of::<bindings::limb_t>());
 
         // Safety: bindings call with valid arguments.
         unsafe {
@@ -337,7 +339,8 @@ impl Projective {
                 len,
                 &scalars[0],
                 Scalar::NUM_BITS as usize, // 255 fits in usize whatever the target ptr size
-                scratch.as_mut_ptr(),
+                scratch.as_mut_ptr(), // We do not set the length of `scratch` because its elements
+                                      // don't have a `Drop` implementation.
             );
         };
 
@@ -649,7 +652,7 @@ mod tests {
     #[test]
     #[cfg(feature = "alloc")]
     fn linear_combination() {
-        use alloc::vec::Vec;
+        use alloc::{vec, vec::Vec};
         use group::ff::Field;
 
         const SIZE: usize = 10;
@@ -668,7 +671,22 @@ mod tests {
         }
 
         let pippenger = Projective::linear_combination(points.as_slice(), scalars.as_slice());
-
         assert_eq!(naive, pippenger);
+        
+        let points: Vec<Projective> = Vec::new();
+        let scalars: Vec<Scalar> = Vec::new();
+        let empty_linear_combination =
+            Projective::linear_combination(points.as_slice(), scalars.as_slice());
+        assert_eq!(empty_linear_combination, Projective::identity());
+
+        let scalars = vec![Scalar::ONE; 1];
+        let length_mismatch =
+            Projective::linear_combination(&points, &scalars);
+        assert_eq!(length_mismatch, Projective::identity());
+
+        let points = vec![Projective::generator(); 2];
+        let length_mismatch =
+            Projective::linear_combination(&points, &scalars);
+        assert_eq!(length_mismatch, Projective::generator());
     }
 }
