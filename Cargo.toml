@@ -6,6 +6,7 @@ links = "blst"
 rust-version = "1.92"
 
 [features]
+default = ["alloc"]
 alloc = []
 
 [dependencies]
