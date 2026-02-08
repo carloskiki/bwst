@@ -227,7 +227,7 @@ impl Field for Scalar {
         ],
     });
 
-    fn try_from_rng<R: rand_core::TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: rand_core::TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         loop {
             let mut scalar = bindings::blst_fr { l: [0, 0, 0, 0] };
             // Safety:

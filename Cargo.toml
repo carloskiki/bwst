@@ -10,12 +10,12 @@ default = ["alloc"]
 alloc = []
 
 [dependencies]
-group = { version = "0.14.0-pre.0", package = "rustcrypto-group" }
+group = { version = "0.14.0-rc.0", package = "rustcrypto-group" }
 subtle = { version = "2.6", default-features = false }
-rand_core = "0.10.0-rc-3"
+rand_core = "0.10.0"
 
 [dev-dependencies]
-getrandom = { version = "0.4.0-rc.0", features = ["sys_rng"]}
+getrandom = { version = "0.4.1", features = ["sys_rng"] }
 
 [build-dependencies]
 cc = "1.2"

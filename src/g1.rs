@@ -4,7 +4,7 @@ use core::{
 };
 
 use group::{Group, GroupEncoding, ff::PrimeField};
-use rand_core::TryRngCore;
+use rand_core::TryRng;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 use crate::{
@@ -182,7 +182,7 @@ impl ConditionallySelectable for Projective {
 impl Group for Projective {
     type Scalar = Scalar;
 
-    fn try_from_rng<R: TryRngCore + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
+    fn try_from_rng<R: TryRng + ?Sized>(rng: &mut R) -> Result<Self, R::Error> {
         let mut out = Self::default().0;
         let mut msg = [0u8; 64];
         rng.try_fill_bytes(&mut msg)?;
