@@ -288,6 +288,12 @@ impl GroupEncoding for Projective {
 }
 
 impl Projective {
+    pub const IDENTITY: Self = Self(blst_p1 {
+        x: bindings::blst_fp { l: [0; 6] },
+        y: bindings::blst_fp { l: [0; 6] },
+        z: bindings::blst_fp { l: [0; 6] },
+    });
+    
     #[cfg(feature = "alloc")]
     pub fn linear_combination(points: &[Self], scalars: &[Scalar]) -> Self {
         use alloc::vec::Vec;

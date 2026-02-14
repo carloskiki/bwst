@@ -301,6 +301,23 @@ impl GroupEncoding for Projective {
 }
 
 impl Projective {
+    pub const IDENTITY: Self = Self(bindings::blst_p2 {
+        x: bindings::blst_fp2 {
+            fp: [bindings::blst_fp { l: [0; 6] }; 2],
+        },
+        y: bindings::blst_fp2 {
+            fp: [bindings::blst_fp { l: [0; 6] }; 2],
+        },
+        z: bindings::blst_fp2 {
+            fp: [
+                bindings::blst_fp {
+                    l: [1, 0, 0, 0, 0, 0],
+                },
+                bindings::blst_fp { l: [0; 6] },
+            ],
+        },
+    });
+
     #[cfg(feature = "alloc")]
     pub fn linear_combination(points: &[Self], scalars: &[Scalar]) -> Self {
         use alloc::vec::Vec;
@@ -309,7 +326,7 @@ impl Projective {
         if len == 0 {
             return Projective::identity();
         }
-        
+
         let mut out = Projective::default().0;
         let points = [points.as_ptr() as *const blst_p2, core::ptr::null()];
         let mut affines = Vec::with_capacity(len);
@@ -672,7 +689,7 @@ mod tests {
 
         let pippenger = Projective::linear_combination(points.as_slice(), scalars.as_slice());
         assert_eq!(naive, pippenger);
-        
+
         let points: Vec<Projective> = Vec::new();
         let scalars: Vec<Scalar> = Vec::new();
         let empty_linear_combination =
@@ -680,13 +697,11 @@ mod tests {
         assert_eq!(empty_linear_combination, Projective::identity());
 
         let scalars = vec![Scalar::ONE; 1];
-        let length_mismatch =
-            Projective::linear_combination(&points, &scalars);
+        let length_mismatch = Projective::linear_combination(&points, &scalars);
         assert_eq!(length_mismatch, Projective::identity());
 
         let points = vec![Projective::generator(); 2];
-        let length_mismatch =
-            Projective::linear_combination(&points, &scalars);
+        let length_mismatch = Projective::linear_combination(&points, &scalars);
         assert_eq!(length_mismatch, Projective::generator());
     }
 }

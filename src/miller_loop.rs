@@ -48,6 +48,15 @@ impl MulAssign<&Result> for Result {
 }
 
 impl Result {
+    pub const ZERO: Self = {
+        let fp_zero = bindings::blst_fp {
+            l: [0, 0, 0, 0, 0, 0],
+        };
+        let fp2_zero = bindings::blst_fp2 { fp: [fp_zero; 2] };
+        let fp6_zero = bindings::blst_fp6 { fp2: [fp2_zero; 3] };
+        Result(blst_fp12 { fp6: [fp6_zero; 2] })
+    };
+
     pub fn miller_loop(p: &g1::Projective, q: &g2::Projective) -> Result {
         let p_affine = {
             let mut out = bindings::blst_p1_affine::default();
